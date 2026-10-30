@@ -1,8 +1,7 @@
 # video2sim
 
-Phone video → SAM 3 segmentation → 3D objects → MuJoCo SO-101 playground → training → real-robot kit.
+Phone video → SAM 3 instance segmentation of every frame → MuJoCo scene for the SO-101 arm.
 
-- App: https://mahekparvez.github.io/video2sim/
-- Project page: https://mahekparvez.github.io/video2sim/about.html
+Project page: https://mahekparvez.github.io/video2sim/
 
-This repository hosts the web pages (`docs/`). The application code is in a separate private repository.
+This repository hosts the project page (`docs/`). The application code is in a separate private repository.
