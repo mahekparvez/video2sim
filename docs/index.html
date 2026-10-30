@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>video2sim: phone video to MuJoCo SO-101 simulation</title>
+<meta name="description" content="Film a tabletop with your phone, say what the robot should do, and get a MuJoCo scene for the SO-101 arm, with SAM 3 instance segmentation of every frame.">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0b0b0b; color: #f2f2f2; font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif; }
+  main { max-width: 920px; margin: 0 auto; padding: 72px 24px 96px; }
+  h1 { font-size: 40px; line-height: 1.15; margin: 0 0 16px; font-weight: 600; letter-spacing: -0.02em; }
+  h2 { font-size: 20px; margin: 64px 0 12px; font-weight: 600; }
+  p { margin: 0 0 16px; color: #d0d0d0; }
+  .pitch { font-size: 19px; color: #e6e6e6; max-width: 680px; }
+  a { color: #fff; }
+  .links { margin-top: 24px; }
+  .links a { margin-right: 20px; }
+  .videos { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  figure { margin: 0; }
+  video, img { display: block; width: 100%; border-radius: 6px; background: #000; }
+  figcaption { font-size: 14px; color: #9a9a9a; margin-top: 8px; }
+  ol { padding-left: 20px; color: #d0d0d0; }
+  li { margin-bottom: 8px; }
+  code { font: 14px ui-monospace, "SF Mono", Menlo, monospace; color: #fff; }
+  footer { margin-top: 72px; font-size: 14px; color: #7a7a7a; }
+  @media (max-width: 640px) { h1 { font-size: 30px; } .videos { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>video2sim</h1>
+  <p class="pitch">Film a tabletop with your phone and say what the robot should do. video2sim turns the clip into a
+    MuJoCo scene for the SO-101 arm: SAM 3 segments every object in every frame, the objects are measured and placed,
+    and the task is set up in simulation.</p>
+  <div class="links">
+    <a href="https://github.com/mahekparvez/video2sim">Repository on GitHub</a>
+  </div>
+
+  <h2>Demo</h2>
+  <div class="videos">
+    <figure>
+      <video src="assets/input-clip.mp4" controls muted loop playsinline preload="metadata"></video>
+      <figcaption>Input: a 10-second phone clip. Command: “pick up cup and put on the napkin”.</figcaption>
+    </figure>
+    <figure>
+      <video src="assets/sam3-demo.mp4" controls muted loop playsinline preload="metadata"></video>
+      <figcaption>Output: SAM 3 instance masks for the cup (red) and napkin (blue) in all 24 frames.</figcaption>
+    </figure>
+  </div>
+
+  <h2>Screenshots</h2>
+  <figure>
+    <img src="assets/website-segmentation.jpg" alt="video2sim web app showing 48 of 48 masks segmented, with an overlay grid of frames">
+    <figcaption>The local web app after a run: 48/48 masks (2 objects × 24 frames), segmented on a Colab GPU in about a minute.</figcaption>
+  </figure>
+  <figure style="margin-top:24px">
+    <img src="assets/sam3-all-frames.jpg" alt="Contact sheet of 24 frames with the cup masked red and the napkin masked blue">
+    <figcaption>Every frame, including the cup cut off at the edge and overlapping the napkin.</figcaption>
+  </figure>
+
+  <h2>How it works</h2>
+  <ol>
+    <li>Upload a short phone video and type a command.</li>
+    <li>Frames are extracted and the object names are read from the command.</li>
+    <li>SAM 3, running on a Colab GPU, instance-segments every frame. The browser talks to it through Colab's private proxy, so nothing is exposed publicly.</li>
+    <li>A vision model identifies the objects; the SAM 3 masks give their positions and sizes.</li>
+    <li>A MuJoCo scene is built with the SO-101 arm, the objects and the goal, then rendered.</li>
+  </ol>
+
+  <footer>Built on MuJoCo, the MuJoCo Menagerie SO-101 model, and Meta's SAM 3.</footer>
+</main>
+</body>
+</html>
