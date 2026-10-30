@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>video2sim — phone video → MuJoCo robot sim</title>
+<style>
+  :root { --bg:#0d1117; --panel:#161b22; --line:#30363d; --txt:#e6edf3; --faint:#8b949e;
+          --mint:#3fb950; --rose:#f85149; --accent:#58a6ff; }
+  * { box-sizing:border-box; margin:0; }
+  body { background:var(--bg); color:var(--txt); font:16px/1.65 -apple-system,"Segoe UI",system-ui,sans-serif; }
+  .wrap { max-width:960px; margin:0 auto; padding:0 24px 96px; }
+  header { padding:88px 0 48px; text-align:center; }
+  h1 { font-size:42px; letter-spacing:-0.02em; }
+  h1 .a { color:var(--accent); }
+  .sub { color:var(--faint); max-width:620px; margin:14px auto 0; font-size:18px; }
+  .chips { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:22px; }
+  .chip { border:1px solid var(--line); border-radius:999px; padding:4px 14px; font-size:13px; color:var(--faint); }
+  section { margin-top:72px; }
+  .step { color:var(--accent); font:600 13px/1 ui-monospace,monospace; letter-spacing:0.12em; text-transform:uppercase; }
+  h2 { font-size:26px; margin:8px 0 10px; letter-spacing:-0.01em; }
+  p  { color:var(--faint); max-width:700px; }
+  .grid { display:grid; gap:12px; margin-top:22px; }
+  .g4 { grid-template-columns:repeat(4,1fr); } .g2 { grid-template-columns:repeat(2,1fr); }
+  @media (max-width:720px){ .g4{grid-template-columns:repeat(2,1fr)} .g2{grid-template-columns:1fr} }
+  figure { background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  figure img, figure video { width:100%; display:block; }
+  figcaption { padding:10px 14px; font-size:13px; color:var(--faint); }
+  .honest { border-left:3px solid var(--rose); background:var(--panel); border-radius:0 12px 12px 0;
+            padding:18px 22px; margin-top:22px; }
+  .honest b { color:var(--txt); }
+  table { width:100%; border-collapse:collapse; margin-top:22px; font-size:14.5px; }
+  th,td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); }
+  th { color:var(--faint); font-weight:600; }
+  .ok { color:var(--mint); } .no { color:var(--rose); }
+  code, .mono { font:0.92em ui-monospace,Menlo,monospace; color:var(--txt); }
+  .flow { display:flex; gap:0; align-items:center; flex-wrap:wrap; margin-top:22px; font-size:14px; }
+  .flow span { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 16px; }
+  .flow i { color:var(--faint); font-style:normal; padding:0 10px; }
+  footer { margin-top:96px; padding-top:28px; border-top:1px solid var(--line); color:var(--faint); font-size:14px; }
+  a { color:var(--accent); text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>video2sim<span class="a"> ·</span> phone video → robot sim</h1>
+  <p class="sub">Film your table with a phone, say what the robot should do — get a metrically accurate
+     MuJoCo scene, a scripted SO-101 controller, and a policy trained on its demos. Edit the code, hit
+     compile, watch the physics.</p>
+  <div class="chips">
+    <span class="chip">SAM 3 segmentation</span><span class="chip">Nemotron 3 (Nebius)</span>
+    <span class="chip">MuJoCo · SO-101</span><span class="chip">behaviour cloning</span>
+    <span class="chip">L40S GPU worker</span>
+  </div>
+</header>
+
+<section>
+  <div class="step">Pipeline</div>
+  <h2>One video in, one simulator out</h2>
+  <div class="flow">
+    <span>phone video</span><i>→</i><span>frames</span><i>→</i><span>SAM&nbsp;3 masks</span><i>→</i>
+    <span>metric scale</span><i>→</i><span>meshes</span><i>→</i><span>MuJoCo scene</span><i>→</i>
+    <span>scripted task</span><i>→</i><span>trained policy</span>
+  </div>
+</section>
+
+<section>
+  <div class="step">Step 1–2 · Perception</div>
+  <h2>Every frame segmented, automatically</h2>
+  <p>24 frames are pulled from the clip and SAM&nbsp;3 (on a remote GPU worker) finds each object the
+     command mentions — <b>48/48 masks in under 20&nbsp;seconds</b>, no clicks. The cup is pink, the napkin blue.</p>
+  <div class="grid g4">
+    <figure><img src="assets/frame_raw.jpg" alt="raw frame"><figcaption>raw frame</figcaption></figure>
+    <figure><img src="assets/seg_frame_005.jpg" alt="SAM 3 overlay"><figcaption>SAM 3 masks</figcaption></figure>
+    <figure><img src="assets/seg_frame_010.jpg" alt="SAM 3 overlay"><figcaption>another viewpoint</figcaption></figure>
+    <figure><img src="assets/seg_frame_020.jpg" alt="SAM 3 overlay"><figcaption>tracked across the orbit</figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <div class="step">Step 2½ · Scale without a marker</div>
+  <h2>The napkin <em>is</em> the ruler</h2>
+  <p>No ArUco marker in the shot? The flat object's mask is fitted to a four-corner quad and used as the
+     scale reference (12.7&nbsp;cm, editable). From that single assumption the cup measures
+     <b>7.77&nbsp;cm wide</b> — the real cup is 7.8&nbsp;cm. False-positive marker detections on the
+     napkin's printed pattern are rejected automatically.</p>
+</section>
+
+<section>
+  <div class="step">Step 3–4 · Scene</div>
+  <h2>Meshes measured from your masks</h2>
+  <p>Objects aren't placeholder boxes: the cup is a solid of revolution with its taper regressed from the
+     silhouette, the napkin an extruded footprint — both placed where the video says they are, within reach
+     of a simulated SO-101 arm. On the site, the scene sits next to a live code editor:
+     change the controller, press <b>compile &amp; run</b>, and the physics result plays back.</p>
+  <div class="grid g2">
+    <figure><img src="assets/scene_front.png" alt="MuJoCo scene front view"><figcaption>the reconstructed scene — measured cup, napkin, goal</figcaption></figure>
+    <figure><img src="assets/scene_side.png" alt="MuJoCo scene side view"><figcaption>side view</figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <div class="step">Step 5 · The task, honestly</div>
+  <h2>“Pick up the cup, put it on the napkin”</h2>
+  <p>The scripted controller first checks the grasp against the <em>measured</em> shape — and reports the
+     truth instead of shrinking the cup to pass:</p>
+  <div class="honest">
+    <b>Grasp infeasible as measured.</b> The gripper's practical straddle at reachable wrist pitches is
+    ~6&nbsp;cm; the cup's rim is 7.8&nbsp;cm. Probed in simulation too — it tips or slips every time.
+    So the controller says so, and pushes instead.
+  </div>
+  <div class="grid g2" style="margin-top:18px">
+    <figure><video src="assets/scripted_push.mp4" autoplay loop muted playsinline></video>
+      <figcaption>scripted push: the cup travels 23 cm to <b>3.7 cm</b> from the napkin centre — but an
+      empty 20 g paper cup tips at any contact above ~2 cm, finer than the arm's accuracy</figcaption></figure>
+    <figure><video src="assets/policy_rollout.mp4" autoplay loop muted playsinline></video>
+      <figcaption>behaviour-cloned policy (trained on 18 scripted demos) rolling out — reaches, still
+      clips the cup; shown as the failing trials they are</figcaption></figure>
+  </div>
+  <table>
+    <tr><th>Check</th><th>Result</th></tr>
+    <tr><td>Object sizes recovered from one phone video</td><td class="ok">cup 7.77 cm vs 7.8 cm real</td></tr>
+    <tr><td>Segmentation coverage</td><td class="ok">48/48 masks, 19.6 s on an L40S</td></tr>
+    <tr><td>Transport to goal (push)</td><td class="ok">3.7 cm from the napkin centre</td></tr>
+    <tr><td>Upright arrival (&lt;15°)</td><td class="no">fails — physics of an empty tapered cup</td></tr>
+    <tr><td>Grasp of a 7.8 cm rim with a 6 cm gripper</td><td class="no">infeasible, reported with evidence</td></tr>
+  </table>
+</section>
+
+<section>
+  <div class="step">Step 6–7 · Close the loop</div>
+  <h2>Download, edit, upload, run</h2>
+  <p>The whole task ships as a self-contained bundle — scene, controller, trainer, runner, trained
+     policy. Download it, change the controller (or ask Nemotron to change it for you), upload it back,
+     and the site runs <em>your</em> code with the trained model and shows the outcome.</p>
+</section>
+
+<footer>
+  Built on <a href="https://github.com/facebookresearch">SAM&nbsp;3</a>, NVIDIA Nemotron&nbsp;3 via
+  Nebius Token Factory, <a href="https://mujoco.org">MuJoCo</a>, and the
+  <a href="https://github.com/TheRobotStudio/SO-ARM100">SO-101</a> arm model.
+  All numbers above are measured, not aspirational.
+</footer>
+
+</div>
+</body>
+</html>
